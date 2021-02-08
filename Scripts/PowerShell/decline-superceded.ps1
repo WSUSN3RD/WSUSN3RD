@@ -6,25 +6,34 @@
 # ===============================================
 # It's recommended to run the script with the -SkipDecline switch to see how many superseded updates are in WSUS and to TAKE A BACKUP OF THE SUSDB before declining the updates.
 # Parameters:
+
 # $UpdateServer             = Specify WSUS Server Name
 # $UseSSL                   = Specify whether WSUS Server is configured to use SSL
 # $Port                     = Specify WSUS Server Port
 # $SkipDecline              = Specify this to do a test run and get a summary of how many superseded updates we have
 # $DeclineLastLevelOnly     = Specify whether to decline all superseded updates or only last level superseded updates
 # $ExclusionPeriod          = Specify the number of days between today and the release date for which the superseded updates must not be declined. Eg, if you want to keep superseded updates published within the last 2 months, specify a value of 60 (days)
+
+
 # Supersedence chain could have multiple updates. 
 # For example, Update1 supersedes Update2. Update2 supersedes Update3. In this scenario, the Last Level in the supersedence chain is Update3. 
 # To decline only the last level updates in the supersedence chain, specify the DeclineLastLevelOnly switch
+
 # Usage:
 # =======
+
 # To do a test run against WSUS Server without SSL
 # Decline-SupersededUpdates.ps1 -UpdateServer SERVERNAME -Port 8530 -SkipDecline
+
 # To do a test run against WSUS Server using SSL
 # Decline-SupersededUpdates.ps1 -UpdateServer SERVERNAME -UseSSL -Port 8531 -SkipDecline
+
 # To decline all superseded updates on the WSUS Server using SSL
 # Decline-SupersededUpdates.ps1 -UpdateServer SERVERNAME -UseSSL -Port 8531
+
 # To decline only Last Level superseded updates on the WSUS Server using SSL
 # Decline-SupersededUpdates.ps1 -UpdateServer SERVERNAME -UseSSL -Port 8531 -DeclineLastLevelOnly
+
 # To decline all superseded updates on the WSUS Server using SSL but keep superseded updates published within the last 2 months (60 days)
 # Decline-SupersededUpdates.ps1 -UpdateServer SERVERNAME -UseSSL -Port 8531 -ExclusionPeriod 60
 
@@ -47,16 +56,20 @@ Param(
     [Parameter(Mandatory = $False)]
     [int] $ExclusionPeriod = 0
 )
+
 Write-Host ""
+
 if ($SkipDecline -and $DeclineLastLevelOnly) {
     Write-Host "Using SkipDecline and DeclineLastLevelOnly switches together is not allowed."
     Write-Host ""
     return
 }
+
 $outPath = Split-Path $script:MyInvocation.MyCommand.Path
 $outSupersededList = Join-Path $outPath "SupersededUpdates.csv"
 $outSupersededListBackup = Join-Path $outPath "SupersededUpdatesBackup.csv"
 "UpdateID, RevisionNumber, Title, KBArticle, SecurityBulletin, LastLevel" | Out-File $outSupersededList
+
 try {
     
     if ($UseSSL) {
@@ -76,18 +89,24 @@ catch [System.Exception] {
     Write-Host ""
     $wsus = $null
 }
+
 if ($wsus -eq $null) { return } 
+
 Write-Host "Connected."
+
 $countAllUpdates = 0
 $countSupersededAll = 0
 $countSupersededLastLevel = 0
 $countSupersededExclusionPeriod = 0
 $countSupersededLastLevelExclusionPeriod = 0
 $countDeclined = 0
+
 Write-Host "Getting a list of all updates... " -NoNewLine
+
 try {
     $allUpdates = $wsus.GetUpdates()
 }
+
 catch [System.Exception] {
     Write-Host "Failed to get updates."
     Write-Host "Error:" $_.Exception.Message
@@ -95,7 +114,9 @@ catch [System.Exception] {
     Write-Host ""
     return
 }
+
 Write-Host "Done"
+
 Write-Host "Parsing the list of updates... " -NoNewLine
 foreach ($update in $allUpdates) {
     
@@ -111,6 +132,7 @@ foreach ($update in $allUpdates) {
         if (!$update.HasSupersededUpdates) {
             $countSupersededLastLevel++
         }
+
         if ($update.CreationDate -lt (get-date).AddDays(-$ExclusionPeriod)) {
             $countSupersededExclusionPeriod++
             if (!$update.HasSupersededUpdates) {
@@ -122,11 +144,14 @@ foreach ($update in $allUpdates) {
         
     }
 }
+
 Write-Host "Done."
 Write-Host "List of superseded updates: $outSupersededList"
+
 Write-Host ""
 Write-Host "Summary:"
 Write-Host "========"
+
 Write-Host "All Updates =" $countAllUpdates
 Write-Host "Any except Declined =" ($countAllUpdates - $countDeclined)
 Write-Host "All Superseded Updates =" $countSupersededAll
@@ -135,6 +160,7 @@ Write-Host "    Superseded Updates (Last Level) =" $countSupersededLastLevel
 Write-Host "    Superseded Updates (Older than $ExclusionPeriod days) =" $countSupersededExclusionPeriod
 Write-Host "    Superseded Updates (Last Level Older than $ExclusionPeriod days) =" $countSupersededLastLevelExclusionPeriod
 Write-Host ""
+
 $i = 0
 if (!$SkipDecline) {
     
@@ -197,6 +223,7 @@ if (!$SkipDecline) {
 else {
     Write-Host "SkipDecline flag is set to $SkipDecline. Skipped declining updates"
 }
+
 Write-Host ""
 Write-Host "Done"
 Write-Host ""

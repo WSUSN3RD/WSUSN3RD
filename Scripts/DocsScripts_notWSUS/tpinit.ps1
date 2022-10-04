@@ -17,7 +17,7 @@ if ( $dashTwo ) {
 
 $scriptDir = Split-Path -Path $MyInvocation.MyCommand.Definition -Parent
 $featureFilePath = "C:\Docs\Scripts\tpfeatures.txt"
-$repoPath = "C:\Program Files\Git\memdocs-pr\memdocs\configmgr\"
+$repoPath = "C:\Program Files\Git\memdocs\memdocs\configmgr\"
 $tpPath = $repoPath + "core\get-started\" + $dateObj.year + "\includes\"
 
 # get feature list
